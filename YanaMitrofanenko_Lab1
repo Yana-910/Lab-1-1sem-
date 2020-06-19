@@ -1,0 +1,54 @@
+from requests import request
+from bs4 import BeautifulSoup
+
+import time
+import re
+
+def clearResFile():
+    f=open('./results.txt','w')
+    f.write('')
+    f.close()
+    f=open('./hrefs.txt','w')
+    f.write('')
+    f.close()
+def downloadHref(href):
+    result=''
+    try:
+        result = request('GET', href).text
+    except:
+        result = ''
+    return result
+root="https://en.wikipedia.org"
+def searchPATH(HTML1,HTML2,vector=[],n=0):
+    if (HTML1==HTML2):
+        return vector
+    if (n>=10):
+        return vector
+    id="bodyContent"
+    BeautSoup = BeautifulSoup(HTML2, 'lxml')
+    bodyHTML2 = str(BeautSoup.find("div", {"id" : id}))
+    a=BeautifulSoup(bodyHTML2, 'lxml').findAll("a")
+    hrefs=[]
+    for i in a:
+        try:
+            hrefs+=[i['href'] if 'http' in i['href'] else root + i['href']]
+        except:
+            hrefs+=[]
+    result=vector
+    for i in hrefs:
+        if not i in vector:
+            print(i)
+            temp=downloadHref(i)
+            if temp!=HTML1:
+                vector = vector + [i]
+                if temp!='':
+                    result = searchPATH(HTML1,temp,vector,n+1)
+            else:
+                print("Нашел")
+                return result+[i]
+    print("Прошел полный цикл")
+    return result
+host="https://en.wikipedia.org/wiki/Special:Random"
+HTML1=downloadHref(host)
+HTML2=downloadHref(host)
+searchPATH(HTML1,HTML2,[])
